@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title><%= title %></title>
+    <link rel='stylesheet' href='/stylesheets/style.css'/>
+    <link rel="stylesheet" href="Metro/css/metro.css">
+
+    <script src="/javascripts/jquery-3.2.1.min.js"></script>
+    <script src="/Metro/js/metro.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/javascripts/chat.js"></script>
+
+    <script>
+        var commandList = ['/join', '/nick'];
+
+        function divEscapedContentElement(message) {
+            return $('<div></div>').text(message);
+        }
+
+        function divSystemContentElement(message) {
+            return $('<div></div>').html('<i>' + message + '</i>');
+        }
+
+        function processUserInput(chatApp) {
+            var message = $('#send_message').val();
+            if (message.length == 0) {
+                return;
+            }
+            var systemMessage;
+
+            if (commandList.indexOf(message.split(' ')[0]) > -1) {
+                systemMessage = chatApp.processCommand(message);
+                if (systemMessage) {
+                    $('#massages').append(divSystemContentElement(systemMessage));
+                }
+            } else {
+                chatApp.sendMessage($('#room').val(), message);
+                $('#massages').append(divEscapedContentElement('me: ' + message));
+                $('#massages').scrollTop($('#massages').prop('scrollHeight'));
+            }
+            $('#send_message').val('');
+        }
+
+        var socket = io.connect();
+
+        $(document).ready(function () {
+            var chatApp = new chat(socket);
+
+            socket.on('message', function (message) {
+                $('#massages').append(divSystemContentElement(message.text));
+            });
+
+            socket.on('nameResult', function (result) {
+                var message;
+
+                if (result.success) {
+                    message = 'You are now known as ' + result.name + '.';
+                } else {
+                    message = result.message;
+                }
+                $('#massages').append(divSystemContentElement(message));
+            });
+
+            socket.on('joinResult', function (result) {
+                var message;
+
+                if (result.success) {
+                    message = 'You are in chat room: ' + result.room + '.';
+                    $('#room').text("你现在所处的聊天室是: '" + result.room + "'");
+                    $('#room').val(result.room);
+                } else {
+                    message = result.message;
+                }
+
+                $('#massages').append(divSystemContentElement(message));
+            });
+
+            socket.on('rooms', function (roomSet) {
+                $('#room_list').empty();
+
+                for (var room in roomSet) {
+                    $('#room_list').append(divEscapedContentElement(room));
+                }
+
+                $('#room_list div').click(function () {
+                    chatApp.processCommand('/join ' + $(this).text());
+                    $('#send_message').focus();
+                });
+            });
+
+            socket.on('userChange', function (usersInRoom) {
+                $('#user_list').empty();
+
+                for (var i = 0; i < usersInRoom.length; i++) {
+                    $('#user_list').append(divEscapedContentElement(usersInRoom[i]));
+                }
+
+            });
+
+            $('#send_message').focus();
+
+            $('#send_button').click(function () {
+                processUserInput(chatApp);
+            });
+
+            $('#send_message').keydown(function (event) {
+                if (event.keyCode == 13) {
+                    processUserInput(chatApp);
+                }
+            });
+
+        });
+
+    </script>
+</head>
+<body>
+<div id="content">
+    <div id="head">
+        <h4>欢迎来到<%= title %></h4>
+    </div>
+    <div id="room">
+
+    </div>
+    <table id="main_table">
+        <tr id="main_table_head">
+            <td>
+                <h5>在线用户</h5>
+            </td>
+            <td>
+
+            </td>
+            <td>
+                <h5>聊天室列表</h5>
+            </td>
+        </tr>
+        <tr id="main_table_body">
+            <td>
+                <div id="user_list"></div>
+            </td>
+            <td>
+                <div id="massages"></div>
+            </td>
+            <td>
+                <div id="room_list"></div>
+            </td>
+        </tr>
+    </table>
+
+    <div id="send_div">
+        <div id="help">
+            聊天命令：
+            <ul>
+                <li>更改昵称：<code>/nick [昵称]</code></li>
+                <li>加入/创建聊天室：<code>/join [聊天室名]</code></li>
+            </ul>
+        </div>
+
+        <table id="send_table">
+            <tr>
+                <td width="80%">
+                    <div class="input-control text full-size">
+                        <input type="text" id="send_message" placeholder="Input you text here...">
+                    </div>
+                </td>
+                <td width="20%" align="center">
+                    <button class="button primary" id="send_button">发送</button>
+                </td>
+            </tr>
+        </table>
+
+    </div>
+</div>
+</body>
+</html>
