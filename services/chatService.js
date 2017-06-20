@@ -1,37 +1,48 @@
 /**
  * Created by Victor_Zhou on 2017-6-4.
  */
+var User = require('../module/user');
 var logger = require('../logging/logger')('chatService');
 
-var guestNumber = 1;
 var nickNames = {};
 var currentRoom = {};
 
-exports.assignGuestName = function (socket) {
-    var name = 'Guest' + guestNumber;
-    nickNames[socket.id] = name;
-    logger.info("assignGuestName begin with name: " + name);
-    socket.emit('nameResult', {
-        success: true,
-        name: name
-    });
-    guestNumber += 1;
-};
+exports.initLogin = function (io, socket, room) {
+    socket.on('initLogin', function (message) {
+        User.findOne({username: message.username}, function (err, msg) {
+            if (!err) {
+                if (msg != null) {
+                    var nickname = msg.nickname;
+                    nickNames[socket.id] = nickname;
+                    logger.info("getNickName User [find] nickname: " + nickname);
+                    socket.emit('nameResult', {
+                        success: true,
+                        name: nickname
+                    });
 
-exports.joinRoom = function (io, socket, room) {
-    logger.info("joinRoom begin with room: " + room);
-    socket.join(room);
-    socket.emit('joinResult', {
-        success: true,
-        room: room
-    });
-    socket.broadcast.to(room).emit('message', {
-        text: nickNames[socket.id] + ' has joined ' + room + '.'
-    });
+                    logger.info("joinRoom begin with room: " + room);
+                    socket.join(room);
+                    socket.emit('joinResult', {
+                        success: true,
+                        room: room
+                    });
+                    socket.broadcast.to(room).emit('message', {
+                        text: nickNames[socket.id] + ' has joined ' + room + '.'
+                    });
 
-    currentRoom[socket.id] = room;
-    broadcastUserChange(io, room);
-    broadcastRoomChange(io);
+                    currentRoom[socket.id] = room;
+                    broadcastUserChange(io, room);
+                    broadcastRoomChange(io);
+                }
+            } else {
+                socket.emit('nameResult', {
+                    success: false,
+                    message: '无法获取您的昵称！'
+                });
+                logger.error("getNickName User [find] " + JSON.stringify(err));
+            }
+        })
+    });
 };
 
 exports.handleMessageBroadcasting = function (socket) {

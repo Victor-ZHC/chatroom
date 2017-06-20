@@ -45,6 +45,7 @@
 
         $(document).ready(function () {
             var chatApp = new chat(socket);
+            socket.emit('initLogin', {username: '<%= username %>'});
 
             socket.on('message', function (message) {
                 $('#massages').append(divSystemContentElement(message.text));

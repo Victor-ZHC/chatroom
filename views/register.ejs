@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title><%= title %></title>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/stylesheets/register-form-elements.css">
+    <link rel="stylesheet" href="/stylesheets/register-style.css">
+
+    <script src="/javascripts/jquery-3.2.1.min.js"></script>
+    <script src="/javascripts/jquery.backstretch.min.js"></script>
+    <script src="/bootstrap/js/bootstrap.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $.backstretch("/images/index-backgrounds/3.jpg");
+
+            $('.form-bottom input').on('focus', function() {
+                $(this).removeClass('input-error');
+            });
+
+            $('#form-password').keyup(function () {
+                if ($('#form-confirm-password').val() != $('#form-password').val()) {
+                    $('.confirm-error').css('display', 'block');
+                } else {
+                    $('.confirm-error').css('display', 'none');
+                }
+            });
+
+            $('#form-confirm-password').keyup(function () {
+                if ($('#form-confirm-password').val() != $('#form-password').val()){
+                    $('.confirm-error').css('display', 'block');
+                } else {
+                    $('.confirm-error').css('display', 'none');
+                }
+            });
+
+
+            $('#register').click(function () {
+                $('body').scrollTop(0);
+
+                var isComplete = true;
+
+                $('.form-bottom input').each(function(){
+                    if( $(this).val() == "" ) {
+                        $(this).addClass('input-error');
+                        isComplete = false;
+                    }
+                    else {
+                        $(this).removeClass('input-error');
+                    }
+                });
+
+                if ($('#form-confirm-password').val() != $('#form-password').val()){
+                    $('.confirm-error').css('display', 'block');
+                    isComplete = false;
+                }
+
+                if (!isComplete) {
+                    $('#error-alert-message').text('请好好完善信息呦~');
+                    $('#error-alert').css('display', 'block');
+                    return;
+                }
+
+                var data = {
+                    username: $('#form-username').val(),
+                    password: $('#form-password').val()
+                }
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/register',
+                    data: data,
+                    dataType: 'json',
+                    error: function () {
+                        $('#error-alert-message').text('出现无法控制之错误......');
+                        $('#error-alert').css('display', 'block');
+                    },
+                    success: function (msg) {
+                        if (msg.status) {
+                            $('#success-alert').css('display', 'block');
+
+                            var second = $('#totalSecond').text();
+
+                            setInterval(function () {
+                                if (second < 1) {
+                                    location.href = '/';
+                                } else {
+                                    $('#totalSecond').text(--second);
+                                }
+                            }, 1000);
+
+                        } else {
+                            var error_msg = msg.message
+                            $('#error-alert-message').text(error_msg);
+                            $('#error-alert').css('display', 'block');
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+</head>
+<body>
+<div class="top-content">
+
+    <div class="inner-bg">
+
+        <div class="container">
+            <div id="success-alert" class="alert alert-success">
+                <strong>注册成功成功！</strong><span id="totalSecond">3</span>秒后自动跳转至主页面
+            </div>
+            <div id="error-alert" class="alert alert-warning">
+                <strong>出现了一点小问题！</strong><span id="error-alert-message"></span>
+            </div>
+            <div class="row">
+                <div class="col-sm-8 col-sm-offset-2 text">
+                    <h1><strong>快速注册账号</strong></h1>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-6 col-sm-offset-3 form-box">
+                    <div class="form-top">
+                        <div class="form-top-left">
+                            <h3>请注册</h3>
+                        </div>
+                        <div class="form-top-right">
+                            <i class="fa fa-key"></i>
+                        </div>
+                    </div>
+                    <div class="form-bottom">
+                        <div class="form-group">
+                            <p>输入你的用户名：</p>
+                            <label class="sr-only" for="form-username">Username</label>
+                            <input type="text" name="form-username" placeholder="Username..." class="form-username form-control" id="form-username">
+                        </div>
+                        <div class="form-group">
+                            <p>输入你的密码：</p>
+                            <label class="sr-only" for="form-password">Password</label>
+                            <input type="password" name="form-password" placeholder="Password..." class="form-password form-control" id="form-password">
+                        </div>
+                        <div class="form-group">
+                            <p class="confirm">重新确认你的密码：</p><p class="confirm-error">两次输入密码不一致！</p>
+                            <label class="sr-only" for="form-password">Password</label>
+                            <input type="password" name="form-password" placeholder="Confirm Password..." class="form-password form-control" id="form-confirm-password">
+                        </div>
+                        <button rel="popover" id="register" class="register-btn">注册</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

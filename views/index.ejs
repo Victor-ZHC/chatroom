@@ -2,24 +2,134 @@
 <html>
 <head>
     <title><%= title %></title>
-    <link rel='stylesheet' href='/stylesheets/style.css'/>
-    <link rel="stylesheet" href="Metro/css/metro.css">
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/stylesheets/index-form-elements.css">
+    <link rel="stylesheet" href="/stylesheets/index-style.css">
 
     <script src="/javascripts/jquery-3.2.1.min.js"></script>
-    <script src="/Metro/js/metro.js"></script>
+    <script src="/javascripts/jquery.backstretch.min.js"></script>
+    <script src="/bootstrap/js/bootstrap.min.js"></script>
 
     <script>
         $(document).ready(function () {
-            $("#enter").click(function () {
-                window.location.href = "/main";
+            $.backstretch([
+                "/images/index-backgrounds/1.jpg",
+                "/images/index-backgrounds/2.jpg"
+            ], { duration: 4000, fade: 750 });
+
+            $('.form-middle input').on('focus', function() {
+                $(this).removeClass('input-error');
+            });
+
+            $('#login').click( function() {
+
+                $('.form-middle input').each(function(){
+                    if( $(this).val() == "" ) {
+                        $(this).addClass('input-error');
+                    }
+                    else {
+                        $(this).removeClass('input-error');
+                    }
+                });
+
+            });
+
+            $('#register').click(function () {
+                window.location.href = "/register";
+            });
+
+            $('#login').click(function () {
+                $('body').scrollTop(0);
+
+                $('.form-bottom input').each(function(){
+                    if( $(this).val() == "" ) {
+                        $(this).addClass('input-error');
+                    }
+                    else {
+                        $(this).removeClass('input-error');
+                    }
+                });
+
+                var data = {
+                    username: $('#form-username').val(),
+                    password: $('#form-password').val()
+                }
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/login',
+                    data: data,
+                    dataType: 'json',
+                    error: function () {
+                        $('#error-alert-message').text('出现无法控制之错误......');
+                        $('#error-alert').css('display', 'block');
+                    },
+                    success: function (msg) {
+                        if (!msg.status) {
+                            var error_msg = msg.message
+                            $('#error-alert-message').text(error_msg);
+                            $('#error-alert').css('display', 'block');
+                        } else {
+                            window.location.href = "/main";
+                        }
+                    }
+                });
             });
         });
     </script>
 </head>
 <body>
-<div align="center">
-    <h2>Welcome to <%= title %></h2>
-    <button class="button success" id="enter">点击进入聊天室</button>
+<div class="top-content">
+
+    <div class="inner-bg">
+        <div class="container">
+            <div id="error-alert" class="alert alert-warning">
+                <strong>出现了一点小问题！</strong><span id="error-alert-message"></span>
+            </div>
+            <div class="row">
+                <div class="col-sm-8 col-sm-offset-2 text">
+                    <h1><strong>欢迎来到<%= title %></strong></h1>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-6 col-sm-offset-3 form-box">
+                    <div class="form-top">
+                        <div class="form-top-left">
+                            <h3>请登录</h3>
+                            <p>输入你的用户名和密码：</p>
+                        </div>
+                        <div class="form-top-right">
+                            <i class="fa fa-key"></i>
+                        </div>
+                    </div>
+                    <div class="form-middle">
+                        <div class="form-group">
+                            <label class="sr-only" for="form-username">Username</label>
+                            <input type="text" name="form-username" placeholder="Username..." class="form-username form-control" id="form-username">
+                        </div>
+                        <div class="form-group">
+                            <label class="sr-only" for="form-password">Password</label>
+                            <input type="password" name="form-password" placeholder="Password..." class="form-password form-control" id="form-password">
+                        </div>
+                        <button id="login" class="login-btn">登录</button>
+                    </div>
+                    <div class="form-bottom">
+                        <div class="form-bottom-left">
+                            <p>如果没有账号，可以立即注册！</p>
+                        </div>
+                        <button id="register" class="register-btn">注册</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
 </div>
 </body>
 </html>
