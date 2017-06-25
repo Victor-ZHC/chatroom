@@ -1,5 +1,4 @@
 body {
-  padding: 50px;
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
 }
 
@@ -7,71 +6,108 @@ a {
   color: #00B7FF;
 }
 
+.fa-custom {
+  padding-right: 10px;
+}
+
 #head {
   text-align: center;
 }
 
 #content {
-  width: 800px;
+  width: 80%;
   margin-left: auto;
   margin-right: auto;
 }
 
-#room {
-  margin-top: 1em;
-  background-color: #dddddd;
-}
-
-#main_table {
+#main-table {
   width: 100%;
-  height: 331px;
-  margin-bottom: 1em;
+  margin-bottom: 10px;
 }
 
-#main_table_head {
-  height: 1px;
+#main-table-head {
+  height: 45px;
   text-align: center;
 }
 
-#main_table_body {
-  height: 330px;
+#main-table-body {
+  height: 400px;
 }
 
-#massages {
-  width: 600px;
-  height: 330px;
+#message-column {
+  width: 70%;
+  vertical-align: bottom;
+}
+
+.btn-close {
+  margin-left: 10px;
+}
+
+#messages {
+  width: 100%;
+  height: 350px;
+  border: 1px solid #e3e3e3;
+  border-top: none;
+  -moz-border-radius: 0 0 4px 4px; -webkit-border-radius: 0 0 4px 4px; border-radius: 0 0 4px 4px;
+}
+
+#room-column {
+  width: 15%;
+}
+
+#room-list {
+  width: 100%;
+  height: 400px;
   overflow: auto;
-  background-color: #eeeeee;
 }
 
-#room_list {
-  width: 100px;
-  height: 330px;
-  overflow: auto;
-}
-
-#room_list div {
+#room-list div {
   border-bottom: 1px solid #eeeeee;
 }
 
-#room_list div:hover {
+#room-list div:hover {
   background-color: #dddddd;
 }
 
-#user_list {
-  width: 100px;
-  height: 330px;
+#user-column {
+  width: 15%;
+}
+
+#user-list {
+  width: 100%;
+  height: 400px;
   overflow: auto;
 }
 
-#user_list div {
+#user-list div {
   border-bottom: 1px solid #eeeeee;
 }
 
-#send_table {
-  width: 100%;
+#send-div {
+  padding-top: 10px;
 }
 
-#send_button {
-  width: 80%;
+#send-button {
+  width: 100px;
+}
+
+#send-button i {
+  padding-right: 10px;
+}
+
+.message-head {
+  color: blue;
+  font-style: oblique;
+  font-size: 14px;
+}
+
+.message-content {
+  font-size: 16px;
+  padding-left: 32px;
+}
+
+.message-room {
+  width: 100%;
+  height: 350px;
+  overflow: auto;
 }

@@ -2,174 +2,532 @@
 <html>
 <head>
     <title><%= title %></title>
+    <link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
     <link rel='stylesheet' href='/stylesheets/style.css'/>
-    <link rel="stylesheet" href="Metro/css/metro.css">
+    <link rel="stylesheet" href="/font-awesome/css/font-awesome.min.css">
 
     <script src="/javascripts/jquery-3.2.1.min.js"></script>
-    <script src="/Metro/js/metro.js"></script>
+    <script src="/javascripts/jquery.backstretch.min.js"></script>
+    <script src="/bootstrap/js/bootstrap.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/javascripts/chat.js"></script>
 
     <script>
-        var commandList = ['/join', '/nick'];
+        var currentRoom = '';
+        var userList = {};
+        var usersInRoom = {};
 
-        function divEscapedContentElement(message) {
-            return $('<div></div>').text(message);
-        }
-
-        function divSystemContentElement(message) {
-            return $('<div></div>').html('<i>' + message + '</i>');
-        }
-
-        function processUserInput(chatApp) {
-            var message = $('#send_message').val();
-            if (message.length == 0) {
-                return;
+        Array.prototype.indexOf = function(val) {
+            for (var i = 0; i < this.length; i++) {
+                if (this[i] == val) return i;
             }
-            var systemMessage;
+            return -1;
+        };
 
-            if (commandList.indexOf(message.split(' ')[0]) > -1) {
-                systemMessage = chatApp.processCommand(message);
-                if (systemMessage) {
-                    $('#massages').append(divSystemContentElement(systemMessage));
+        Array.prototype.remove = function(val) {
+            var index = this.indexOf(val);
+            if (index > -1) {
+                this.splice(index, 1);
+            }
+        };
+
+        Date.prototype.Format = function (fmt) { //author: meizz
+            var o = {
+                "M+": this.getMonth() + 1,                 //月份
+                "d+": this.getDate(),                    //日
+                "h+": this.getHours(),                   //小时
+                "m+": this.getMinutes(),                 //分
+                "s+": this.getSeconds(),                 //秒
+                "q+": Math.floor((this.getMonth() + 3) / 3), //季度
+                "S": this.getMilliseconds()             //毫秒
+            };
+            if (/(y+)/.test(fmt))
+                fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+            for (var k in o)
+                if (new RegExp("(" + k + ")").test(fmt))
+                    fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+            return fmt;
+        };
+
+        function initRoomList(roomList, chatApp) {
+            for (var i = 0; i < roomList.length; i++) {
+                $('#room-list').append('<div>' + roomList[i] + '</div>');
+            }
+
+            $('#room-list div').click(function () {
+                if (!($("#nav-" + $(this).text()).length > 0)) {
+                    chatApp.enterRoom($(this).text());
+                } else {
+                    activeRoom($(this).text());
+                }
+                $('#send-message').focus();
+            });
+        }
+
+        function showRoom(room) {
+            $('#messages').append('<div id="message-' + room + '" class="message-room"></div>')
+            $('#room-nav-tabs').append('<li role="presentation" id="nav-' + room + '" onclick="activeRoom(\'' + room + '\')">' +
+                '<a href="#message-' + room + '">' + room + '</a></li>');
+        }
+
+        function activeRoom(room) {
+            $('#room-nav-tabs li').removeClass('active');
+            $('#room-nav-tabs li a button').remove();
+            $('#messages div').css('display', 'none')
+            $('#nav-' + room).addClass('active');
+            $('#nav-' + room + ' a').append('<button type="button" class="btn btn-default btn-xs btn-close" id="exit-room"><i class="fa fa-close"></i></button>');
+            $('#message-' + room).css('display', 'block');
+            currentRoom = room;
+            updateUserList();
+            $('#exit-room').click(function (event) {
+                delete usersInRoom[currentRoom];
+                if (event.stopPropagation) {
+                    event.stopPropagation();
+                } else {
+                    event.cancelBubble = true;
+                }
+                exitRoom(room);
+            });
+        }
+
+        function exitRoom(room) {
+            $('#nav-' + room).remove();
+            $('#message-' + room).remove();
+            if ($('#room-nav-tabs li').length > 0) {
+                $('#room-nav-tabs li:first').click();
+            }
+            chatApp.exitRoom(room);
+        }
+
+        function appendMessage(messageObj) {
+            if (messageObj instanceof Array) {
+                for (var i = 0; i < messageObj.length; i++) {
+                    $('#message-' + currentRoom).append('<p class="message-head">' + messageObj[i].messagehead + '</p><p class="message-content">' + messageObj[i].messagecontent + '</p>');
                 }
             } else {
-                chatApp.sendMessage($('#room').val(), message);
-                $('#massages').append(divEscapedContentElement('me: ' + message));
-                $('#massages').scrollTop($('#massages').prop('scrollHeight'));
+                $('#message-' + messageObj.room).append('<p class="message-head">' + messageObj.messagehead + '</p><p class="message-content">' + messageObj.messagecontent + '</p>');
             }
-            $('#send_message').val('');
+        }
+
+        function updateUserList() {
+            $('#user-list').empty();
+            var usersInRoomList = usersInRoom[currentRoom];
+            for (var i = 0; i < usersInRoomList.length; i++) {
+                $('#user-list').append('<div>' + userList[usersInRoomList[i]] + '</div>');
+            }
+        }
+
+        function appendRoom(room) {
+            $('#room-list').append('<div>' + room + '</div>');
+            $('#room-list div:last-child').click(function () {
+                if (!($("#nav-" + $(this).text()).length > 0)) {
+                    showRoom($(this).text());
+                    chatApp.enterRoom($(this).text());
+                } else {
+                    activeRoom($(this).text());
+                }
+                $('#send-message').focus();
+            });
+        }
+
+        function leaveRoom(room) {
+            $('#room-list div').each(function () {
+                if ($(this).text() == room) {
+                    $(this).remove();
+                }
+            });
+            exitRoom(room)
+        }
+
+        function listUserJoinedRoom(roomList) {
+            $('#user-join-room-list').empty();
+            for (var i = 0; i < roomList.length; i++) {
+                $('#user-join-room-list').append('<option value="' + roomList[i] + '">' + roomList[i] + '</option>');
+            }
         }
 
         var socket = io.connect();
+        var chatApp = new chat(socket);
 
         $(document).ready(function () {
-            var chatApp = new chat(socket);
-            socket.emit('initLogin', {username: '<%= username %>'});
+            //$.backstretch("/images/index-backgrounds/3.jpg");
+
+            chatApp.initLogin('<%= username%>');
+
+            socket.on('initLoginResult', function (message) {
+                if (message.status) {
+                    var roomList = message.user.roomlist;
+                    userList = message.userlist;
+                    initRoomList(roomList, chatApp);
+                } else {
+                    alert(message.message);
+                    window.location.href = "/";
+                }
+            });
+
+            socket.on('enterRoomResult', function (message) {
+                if (message.status) {
+                    var room = message.room;
+                    var roomName = room.roomname;
+                    var userNameList = room.usernamelist;
+                    var messageList = room.messagelist;
+
+                    usersInRoom[roomName] = userNameList;
+                    showRoom(roomName);
+                    activeRoom(roomName)
+                    appendMessage(messageList);
+                } else {
+                    alert(message.message);
+                }
+            })
 
             socket.on('message', function (message) {
-                $('#massages').append(divSystemContentElement(message.text));
+                appendMessage(message);
             });
 
-            socket.on('nameResult', function (result) {
-                var message;
-
-                if (result.success) {
-                    message = 'You are now known as ' + result.name + '.';
+            socket.on('addRoomResult', function (message) {
+                if (message.status) {
+                    $('#add-room-modal').modal('hide');
+                    $('#add-room-input').val('');
+                    appendRoom(message.room);
+                    chatApp.enterRoom(message.room);
                 } else {
-                    message = result.message;
+                    alert(message.message);
                 }
-                $('#massages').append(divSystemContentElement(message));
             });
 
-            socket.on('joinResult', function (result) {
-                var message;
-
-                if (result.success) {
-                    message = 'You are in chat room: ' + result.room + '.';
-                    $('#room').text("你现在所处的聊天室是: '" + result.room + "'");
-                    $('#room').val(result.room);
+            socket.on('joinRoomResult', function (message) {
+                if (message.status) {
+                    $('#join-room-modal').modal('hide');
+                    $('#join-room-input').val('');
+                    appendRoom(message.room);
+                    chatApp.enterRoom(message.room);
                 } else {
-                    message = result.message;
+                    alert(message.message);
+                }
+            });
+
+            socket.on('leaveRoomResult', function (message) {
+                if (message.status) {
+                    $('#leave-room-modal').modal('hide');
+                    leaveRoom(message.room);
+                } else {
+                    alert(message.message);
+                }
+            });
+
+            socket.on('userRoomChange', function (message) {
+                if (message.change == 'join') {
+                    usersInRoom[message.room].push(message.username);
+                } else {
+                    usersInRoom[message.room].remove(message.username);
                 }
 
-                $('#massages').append(divSystemContentElement(message));
-            });
-
-            socket.on('rooms', function (roomSet) {
-                $('#room_list').empty();
-
-                for (var room in roomSet) {
-                    $('#room_list').append(divEscapedContentElement(room));
+                if (message.room == currentRoom) {
+                    updateUserList();
                 }
-
-                $('#room_list div').click(function () {
-                    chatApp.processCommand('/join ' + $(this).text());
-                    $('#send_message').focus();
-                });
             });
 
-            socket.on('userChange', function (usersInRoom) {
-                $('#user_list').empty();
-
-                for (var i = 0; i < usersInRoom.length; i++) {
-                    $('#user_list').append(divEscapedContentElement(usersInRoom[i]));
+            socket.on('getUserJoinedRoomResult', function (message) {
+                if (message.status) {
+                    listUserJoinedRoom(message.roomlist);
+                } else {
+                    alert(message.message);
                 }
-
             });
 
-            $('#send_message').focus();
-
-            $('#send_button').click(function () {
-                processUserInput(chatApp);
+            socket.on('changeNickResult', function (message) {
+                if (message.status) {
+                    alert('成功更换昵称！');
+                    $('#user-nick-edit-modal').modal('hide');
+                    $('#user-nick-edit-input').val('');
+                } else {
+                    alert(message.message);
+                }
             });
 
-            $('#send_message').keydown(function (event) {
+            socket.on('userNickChange', function (message) {
+                userList[message.username] = message.usernick;
+                if (usersInRoom[currentRoom].indexOf(message.username) != -1) {
+                    updateUserList();
+                }
+            });
+
+            socket.on('changePasswdResult', function (message) {
+                if (message.status) {
+                    alert('成功更换密码！');
+                    $('#user-password-edit-modal').modal('hide');
+                    $('#user-password-edit-old-input').val('');
+                    $('#user-password-edit-new-input').val('');
+                } else {
+                    alert(message.message);
+                }
+            });
+
+            $('#send-message').focus();
+
+            $('#send-button').click(function () {
+                var message = $('#send-message').val();
+                if (message.replace(/(^s*)|(s*$)/g, "").length ==0) {
+                    return;
+                }
+                chatApp.sendMessage(currentRoom, message);
+                var messageObj = {
+                    messagehead: userList['<%= username%>'] + ' ' + new Date().Format("yyyy-MM-dd hh:mm:ss"),
+                    messagecontent: message,
+                    room: currentRoom
+                };
+                appendMessage(messageObj);
+            });
+
+            $('#send-message').keydown(function (event) {
                 if (event.keyCode == 13) {
-                    processUserInput(chatApp);
+                    var message = $('#send-message').val();
+                    if (message.replace(/(^s*)|(s*$)/g, "").length ==0) {
+                        return;
+                    }
+                    chatApp.sendMessage(currentRoom, message);
+                    var messageObj = {
+                        messagehead: userList['<%= username%>'] + ' ' + new Date().Format("yyyy-MM-dd hh:mm:ss"),
+                        messagecontent: message,
+                        room: currentRoom
+                    };
+                    appendMessage(messageObj);
                 }
             });
 
+            $('#add-room-submit').click(function () {
+                var room = $('#add-room-input').val();
+                if (room.replace(/(^s*)|(s*$)/g, "").length ==0) {
+                    alert('请给你的房间起个名~');
+                    return;
+                }
+                chatApp.addRoom('<%= username%>', room);
+            });
+
+            $('#join-room-submit').click(function () {
+                var room = $('#join-room-input').val();
+                if (room.replace(/(^s*)|(s*$)/g, "").length ==0) {
+                    alert('还不知道你要加入什么房间呢~');
+                    return;
+                }
+                chatApp.joinRoom('<%= username%>', room);
+            });
+
+            $('#leave-room').click(function () {
+                chatApp.getUserJoinedRoom('<%= username%>');
+            });
+
+            $('#leave-room-submit').click(function () {
+                var room = $('#user-join-room-list').find("option:selected").val();
+                if (confirm('确定要退出房间：' + room + '吗？')) {
+                    chatApp.leaveRoom('<%= username%>', room);
+                }
+            });
+
+            $('#user-nick-edit-submit').click(function () {
+                var newnick = $('#user-nick-edit-input').val();
+                if (newnick.replace(/(^s*)|(s*$)/g, "").length == 0) {
+                    alert("你的昵称没法用~");
+                    return;
+                }
+                chatApp.changeNick('<%= username%>', newnick);
+            });
+
+            $('#user-password-edit-submit').click(function () {
+                var oldPasswd = $('#user-password-edit-old-input').val();
+                var newPasswd = $('#user-password-edit-new-input').val();
+                if (oldPasswd == '' || newPasswd == '') {
+                    alert("还没填写完成~");
+                    return;
+                }
+                if (oldPasswd == newPasswd) {
+                    alert("新密码与旧密码不能重复哦~");
+                    return;
+                }
+                chatApp.changePasswd('<%= username%>', oldPasswd, newPasswd);
+            });
         });
 
     </script>
 </head>
 <body>
+<div class="modal fade" id="add-room-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">添加一个聊天室</h4>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <span class="input-group-addon">为你的聊天室起个名字吧：</span>
+                    <input type="text" class="form-control" id="add-room-input" aria-describedby="basic-addon3">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="add-room-submit">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="join-room-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">加入一个聊天室</h4>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <span class="input-group-addon">请输入你要加入的聊天室名称：</span>
+                    <input type="text" class="form-control" id="join-room-input" aria-describedby="basic-addon3">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="join-room-submit">加入</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="leave-room-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">退出你加入的聊天室</h4>
+            </div>
+            <div class="modal-body">
+                <div class="dropdown">
+                    <select class="form-control" id="user-join-room-list">
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="leave-room-submit">退出</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="user-nick-edit-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">更改<%= username%>的昵称</h4>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <span class="input-group-addon">请输入你的新昵称：</span>
+                    <input type="text" class="form-control" id="user-nick-edit-input" aria-describedby="basic-addon3">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="user-nick-edit-submit">提交</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="user-password-edit-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">更改<%= username%>的密码</h4>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <span class="input-group-addon">请输入你的原密码：</span>
+                    <input type="password" class="form-control" id="user-password-edit-old-input" aria-describedby="basic-addon3">
+                </div>
+                <br>
+                <div class="input-group">
+                    <span class="input-group-addon">请输入你的新密码：</span>
+                    <input type="password" class="form-control" id="user-password-edit-new-input" aria-describedby="basic-addon3">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="user-password-edit-submit">提交</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="content">
-    <div id="head">
-        <h4>欢迎来到<%= title %></h4>
-    </div>
-    <div id="room">
 
-    </div>
-    <table id="main_table">
-        <tr id="main_table_head">
-            <td>
-                <h5>在线用户</h5>
-            </td>
-            <td>
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand">Welcome <%= username%></a>
+            </div>
 
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav">
+                    <li class="dropdown">
+                        <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><i class="fa fa-comments-o fa-custom"></i>聊天室选项<span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li><a id="add-room" data-toggle="modal" data-target="#add-room-modal"><i class="fa fa-plus-square fa-custom"></i>创建聊天室</a></li>
+                            <li><a id="join-room" data-toggle="modal" data-target="#join-room-modal"><i class="fa fa-comments-o fa-custom"></i>加入聊天室</a></li>
+                            <li role="separator" class="divider"></li>
+                            <li><a id="leave-room" data-toggle="modal" data-target="#leave-room-modal"><i class="fa fa-trash fa-custom"></i>退出已加入的聊天室</a></li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <ul class="nav navbar-nav navbar-right">
+                    <li class="dropdown">
+                        <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><i class="fa fa-user fa-custom"></i>用户选项<span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li><a id="user-nick-edit" data-toggle="modal" data-target="#user-nick-edit-modal"><i class="fa fa-edit fa-custom"></i>修改昵称</a></li>
+                            <li><a id="user-password-edit" data-toggle="modal" data-target="#user-password-edit-modal"><i class="fa fa-key fa-custom"></i>修改密码</a></li>
+                            <li role="separator" class="divider"></li>
+                            <li><a id="sign-out"><i class="fa fa-sign-out fa-custom"></i>退出登录</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <table id="main-table">
+        <tr id="main-table-head">
+            <td id="user-column">
+                <h5>聊天室内用户</h5>
             </td>
-            <td>
-                <h5>聊天室列表</h5>
+            <td id="message-column">
+                <ul class="nav nav-tabs" id="room-nav-tabs"></ul>
+            </td>
+            <td id="room-column">
+                <h5>你加入的聊天室</h5>
             </td>
         </tr>
-        <tr id="main_table_body">
+        <tr id="main-table-body">
             <td>
-                <div id="user_list"></div>
+                <div id="user-list"></div>
             </td>
             <td>
-                <div id="massages"></div>
+                <div id="messages"></div>
+                <div class="input-group" id="send-div">
+                    <input type="text" class="form-control" placeholder="Input you text here..." id="send-message">
+                    <div class="input-group-btn">
+                        <button type="button" class="btn btn-default" id="send-button"><i class="fa fa-send"></i>发送</button>
+                    </div>
+                </div>
             </td>
             <td>
-                <div id="room_list"></div>
+                <div id="room-list"></div>
             </td>
         </tr>
     </table>
-
-    <div id="send_div">
-        <div id="help">
-            聊天命令：
-            <ul>
-                <li>更改昵称：<code>/nick [昵称]</code></li>
-                <li>加入/创建聊天室：<code>/join [聊天室名]</code></li>
-            </ul>
-        </div>
-
-        <table id="send_table">
-            <tr>
-                <td width="80%">
-                    <div class="input-control text full-size">
-                        <input type="text" id="send_message" placeholder="Input you text here...">
-                    </div>
-                </td>
-                <td width="20%" align="center">
-                    <button class="button primary" id="send_button">发送</button>
-                </td>
-            </tr>
-        </table>
-
-    </div>
 </div>
 </body>
 </html>

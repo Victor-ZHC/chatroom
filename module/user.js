@@ -7,7 +7,8 @@ var Schema = mongoose.Schema;
 var UserSchema = new Schema({
     username: String,
     password: String,
-    nickname: String
+    nickname: String,
+    roomlist: []
 });
 
 module.exports = mongoose.model('User', UserSchema);

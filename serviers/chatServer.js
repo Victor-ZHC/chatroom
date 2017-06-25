@@ -14,13 +14,16 @@ exports.listen = function (server) {
 
     io.sockets.on('connection', function (socket) {
         logger.info("connection from client id: " + socket.id);
-        chatService.initLogin(io, socket, "Lobby");
-
+        chatService.initLogin(socket);
+        chatService.enterRoom(socket);
+        chatService.exitRoom(socket);
+        chatService.handleAddRoom(socket);
+        chatService.handleChangeNick(io, socket);
+        chatService.handleChangePasswd(socket);
+        chatService.handleJoinRoom(io, socket);
+        chatService.handleLeaveRoom(io, socket);
+        chatService.handleGetUserJoinedRoom(socket);
         chatService.handleMessageBroadcasting(socket);
-        chatService.handleNameChangeAttempts(io, socket);
-        chatService.handleRoomJoining(io, socket);
-
-
         chatService.handleClientDisconnection(io, socket);
     })
 };

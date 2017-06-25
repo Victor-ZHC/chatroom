@@ -8,7 +8,8 @@ exports.addUser = function (username, password, cb) {
     var user = new User({
         username: username,
         password: password,
-        nickname: username
+        nickname: username,
+        roomlist: []
     });
 
     User.findOne({username: username}, function (err, msg) {

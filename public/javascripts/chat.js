@@ -5,6 +5,16 @@ var chat = function (socket) {
     this.socket = socket;
 };
 
+chat.prototype.initLogin = function (username) {
+    var message = { username: username };
+    this.socket.emit('initLogin', message);
+};
+
+chat.prototype.enterRoom = function (room) {
+    var message = { room: room };
+    this.socket.emit('enterRoom', message);
+};
+
 chat.prototype.sendMessage = function (room, text) {
     var message = {
         room: room,
@@ -13,37 +23,59 @@ chat.prototype.sendMessage = function (room, text) {
     this.socket.emit('message', message);
 };
 
-chat.prototype.changeRoom = function (room) {
+chat.prototype.addRoom = function (username, room) {
     var message = {
-        newRoom: room
+        username: username,
+        room: room
     };
-    this.socket.emit('join', message);
+    this.socket.emit('addRoom', message);
 };
 
-chat.prototype.processCommand = function (commandLine) {
-    var words = commandLine.split(' ');
-    if (words.length < 2) {
-        return 'There are wrong arguments of the command.'
-    }
-    var command = words[0].substring(1, words[0].length).toLowerCase();
-    var message = false;
-
-    switch (command) {
-        case 'join':
-            words.shift();
-            var room = words.join(' ');
-            this.changeRoom(room);
-            break;
-        case 'nick':
-            words.shift();
-            var name = words.join(' ');
-            this.socket.emit('nameAttempt', name);
-            break;
-        default:
-            message = 'Unknown error happened!';
-            break;
-    }
-
-    return message;
+chat.prototype.joinRoom = function (username, room) {
+    var message = {
+        username: username,
+        room: room
+    };
+    this.socket.emit('joinRoom', message);
 };
+
+chat.prototype.exitRoom = function (room) {
+    var message = {
+        room: room
+    };
+    this.socket.emit('exitRoom', message);
+};
+
+chat.prototype.leaveRoom = function (username, room) {
+    var message = {
+        username: username,
+        room: room
+    };
+    this.socket.emit('leaveRoom', message);
+};
+
+chat.prototype.getUserJoinedRoom = function (username) {
+    var message = {
+        username: username
+    };
+    this.socket.emit('getUserJoinedRoom', message);
+};
+
+chat.prototype.changeNick = function (username, newnick) {
+    var message = {
+        username: username,
+        newnick: newnick
+    };
+    this.socket.emit('changeNick', message);
+};
+
+chat.prototype.changePasswd = function (username, oldPasswd, newPasswd) {
+    var message = {
+        username: username,
+        oldPasswd: oldPasswd,
+        newPasswd: newPasswd
+    };
+    this.socket.emit('changePasswd', message);
+};
+
 
