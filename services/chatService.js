@@ -39,7 +39,7 @@ Array.prototype.remove = function(val) {
     }
 };
 
-exports.initLogin = function (io, socket) {
+exports.initLogin = function (socket) {
     socket.on('initLogin', function (message) {
         User.findOne({username: message.username}, {username: true, nickname:true, roomlist: true}, function (err, msg) {
             if (!err) {
@@ -65,7 +65,6 @@ exports.initLogin = function (io, socket) {
                                 user: data,
                                 userlist: userlist
                             });
-                            broadcastUserNickChange(io, user.username, user.nickname);
                         } else {
                             socket.emit('nameResult', {
                                 status: false,
@@ -439,6 +438,13 @@ exports.handleChangeNick = function (io, socket) {
             }
         });
 
+    });
+};
+
+exports.handleBroadcastLogin = function (io, socket) {
+    socket.on('broadcastLogin', function (message) {
+        console.log(JSON.stringify(message));
+        broadcastUserNickChange(io, message.username, message.nickname);
     });
 };
 

@@ -78,4 +78,12 @@ chat.prototype.changePasswd = function (username, oldPasswd, newPasswd) {
     this.socket.emit('changePasswd', message);
 };
 
+chat.prototype.broadcastLogin = function (username, nickname) {
+    var message = {
+        username: username,
+        nickname: nickname
+    };
+    this.socket.emit('broadcastLogin', message);
+};
+
 

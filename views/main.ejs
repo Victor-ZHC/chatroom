@@ -174,6 +174,7 @@
                     var roomList = message.user.roomlist;
                     userList = message.userlist;
                     initRoomList(roomList, chatApp);
+                    chatApp.broadcastLogin('<%= username%>', userList['<%= username%>']);
                 } else {
                     alert(message.message);
                     window.location.href = "/";
@@ -263,6 +264,9 @@
 
             socket.on('userNickChange', function (message) {
                 userList[message.username] = message.usernick;
+                if (currentRoom == '') {
+                    return;
+                }
                 if (usersInRoom[currentRoom].indexOf(message.username) != -1) {
                     updateUserList();
                 }
