@@ -17,10 +17,7 @@
 
     <script>
         $(document).ready(function () {
-            $.backstretch([
-                "/images/index-backgrounds/1.jpg",
-                "/images/index-backgrounds/2.jpg"
-            ], { duration: 4000, fade: 750 });
+            $.backstretch("/images/index-backgrounds/1.jpg");
 
             $('.form-middle input').on('focus', function() {
                 $(this).removeClass('input-error');

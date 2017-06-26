@@ -62,6 +62,8 @@
                 }
                 $('#send-message').focus();
             });
+
+            checkNavEmpty();
         }
 
         function showRoom(room) {
@@ -79,6 +81,7 @@
             $('#message-' + room).css('display', 'block');
             currentRoom = room;
             updateUserList();
+            checkNavEmpty();
             $('#exit-room').click(function (event) {
                 delete usersInRoom[currentRoom];
                 if (event.stopPropagation) {
@@ -95,7 +98,10 @@
             $('#message-' + room).remove();
             if ($('#room-nav-tabs li').length > 0) {
                 $('#room-nav-tabs li:first').click();
+            } else {
+                $('#user-list').empty();
             }
+            checkNavEmpty();
             chatApp.exitRoom(room);
         }
 
@@ -128,6 +134,7 @@
                 }
                 $('#send-message').focus();
             });
+            checkNavEmpty();
         }
 
         function leaveRoom(room) {
@@ -136,13 +143,21 @@
                     $(this).remove();
                 }
             });
-            exitRoom(room)
+            exitRoom(room);
         }
 
         function listUserJoinedRoom(roomList) {
             $('#user-join-room-list').empty();
             for (var i = 0; i < roomList.length; i++) {
                 $('#user-join-room-list').append('<option value="' + roomList[i] + '">' + roomList[i] + '</option>');
+            }
+        }
+
+        function checkNavEmpty() {
+            if (!($('#room-nav-tabs li').length > 0)) {
+                $('#send-div').css("display", "none");
+            } else {
+                $('#send-div').css("display", "block");
             }
         }
 
@@ -548,6 +563,11 @@
             </td>
         </tr>
     </table>
+    <div class="help-message">
+        <div><i class="fa fa-check-circle-o fa-custom"></i>新用户可通过点击上方“聊天室选项”选择加入或创建聊天室</div>
+        <div><i class="fa fa-check-circle-o fa-custom"></i>点击右侧聊天室列表进入聊天室</div>
+        <div><i class="fa fa-check-circle-o fa-custom"></i>点击“发送”按钮或者<kbd>Enter键</kbd>发送消息</div>
+    </div>
 </div>
 </body>
 </html>
