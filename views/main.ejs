@@ -349,6 +349,24 @@
                 }
                 chatApp.changePasswd('<%= username%>', oldPasswd, newPasswd);
             });
+            
+            $('#sign-out').click(function () {
+                if (confirm('确定要退出吗？')) {
+                    $.ajax({
+                        type: 'GET',
+                        url: '/signout',
+                        error: function () {
+                            alert('出现无法控制之错误...');
+                        },
+                        success: function (msg) {
+                            if (msg.status) {
+                                window.location.href = "/";
+                            }
+                        }
+                    });
+                }
+
+            });
         });
 
     </script>

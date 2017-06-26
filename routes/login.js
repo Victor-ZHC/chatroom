@@ -39,7 +39,7 @@ router.post('/register', function (req, res, next) {
 });
 
 router.post('/login', function (req, res, next) {
-    logger.info('post /login ' + JSON.stringify(req.body));
+    logger.info('post /login from ' + JSON.stringify(req.body));
     var data = req.body;
     var username = data.username;
     var password = data.password;
@@ -47,12 +47,17 @@ router.post('/login', function (req, res, next) {
     loginService.login(username, password, function (err, msg) {
         if (!err) {
             req.session.username = msg.username;
-            req.session.nickname = msg.nickname;
             res.send({status: true});
         } else {
             res.send({status: false, message: err});
         }
     });
+});
+
+router.get('/signout', function (req, res, next) {
+    logger.info('get /signout client');
+    delete req.session.username;
+    res.send({status: true});
 });
 
 module.exports = router;
