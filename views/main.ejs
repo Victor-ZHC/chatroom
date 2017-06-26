@@ -283,7 +283,8 @@
 
             $('#send-button').click(function () {
                 var message = $('#send-message').val();
-                if (message.replace(/(^s*)|(s*$)/g, "").length ==0) {
+                var testMessage = $('#send-message').val();
+                if (testMessage.replace(/(^s*)|(s*$)/g, "").length ==0) {
                     return;
                 }
                 chatApp.sendMessage(currentRoom, message);
@@ -299,7 +300,8 @@
             $('#send-message').keydown(function (event) {
                 if (event.keyCode == 13) {
                     var message = $('#send-message').val();
-                    if (message.replace(/(^s*)|(s*$)/g, "").length ==0) {
+                    var testMessage = $('#send-message').val();
+                    if (testMessage.replace(/(^s*)|(s*$)/g, "").length ==0) {
                         return;
                     }
                     chatApp.sendMessage(currentRoom, message);
@@ -315,8 +317,14 @@
 
             $('#add-room-submit').click(function () {
                 var room = $('#add-room-input').val();
-                if (room.replace(/(^s*)|(s*$)/g, "").length ==0) {
+                var testRoom = $('#add-room-input').val();
+                var reg = /^[a-zA-Z0-9]*$/g;
+                if (testRoom.replace(/(^s*)|(s*$)/g, "").length ==0) {
                     alert('请给你的房间起个名~');
+                    return;
+                }
+                if (!reg.test(room)) {
+                    alert('目前房间名只能由数字或字母组成~');
                     return;
                 }
                 chatApp.addRoom('<%= username%>', room);
@@ -324,7 +332,8 @@
 
             $('#join-room-submit').click(function () {
                 var room = $('#join-room-input').val();
-                if (room.replace(/(^s*)|(s*$)/g, "").length ==0) {
+                var testRoom = $('#join-room-input').val();
+                if (testRoom.replace(/(^s*)|(s*$)/g, "").length ==0) {
                     alert('还不知道你要加入什么房间呢~');
                     return;
                 }
@@ -344,7 +353,8 @@
 
             $('#user-nick-edit-submit').click(function () {
                 var newnick = $('#user-nick-edit-input').val();
-                if (newnick.replace(/(^s*)|(s*$)/g, "").length == 0) {
+                var testNewnick = $('#user-nick-edit-input').val();
+                if (testNewnick.replace(/(^s*)|(s*$)/g, "").length == 0) {
                     alert("你的昵称没法用~");
                     return;
                 }

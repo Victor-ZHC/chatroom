@@ -39,7 +39,7 @@ Array.prototype.remove = function(val) {
     }
 };
 
-exports.initLogin = function (socket) {
+exports.initLogin = function (io, socket) {
     socket.on('initLogin', function (message) {
         User.findOne({username: message.username}, {username: true, nickname:true, roomlist: true}, function (err, msg) {
             if (!err) {
@@ -65,6 +65,7 @@ exports.initLogin = function (socket) {
                                 user: data,
                                 userlist: userlist
                             });
+                            broadcastUserNickChange(io, user.username, user.nickname);
                         } else {
                             socket.emit('nameResult', {
                                 status: false,

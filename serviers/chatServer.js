@@ -14,7 +14,7 @@ exports.listen = function (server) {
 
     io.sockets.on('connection', function (socket) {
         logger.info("connection from client id: " + socket.id);
-        chatService.initLogin(socket);
+        chatService.initLogin(io, socket);
         chatService.enterRoom(socket);
         chatService.exitRoom(socket);
         chatService.handleAddRoom(socket);
