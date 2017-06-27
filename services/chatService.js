@@ -7,6 +7,8 @@ var logger = require('../logging/logger')('chatService');
 
 var onlineUsers = {};
 
+var timeGap = 8 * 60 * 60 * 1000;
+
 Date.prototype.Format = function (fmt) { //author: meizz
     var o = {
         "M+": this.getMonth() + 1,                 //月份
@@ -129,8 +131,10 @@ exports.handleMessageBroadcasting = function (socket) {
         Room.findOne({roomname: message.room}, function (err, msg) {
             if (!err) {
                 logger.info("handleMessageBroadcasting Room [findOne] " + JSON.stringify(msg));
+                var zeroZone = new Date();
+                var chinaZone = new Date(zeroZone.valueOf() + timeGap);
                 var data = {
-                    messagehead: onlineUsers[socket.id].nickname + ' ' + new Date().Format("yyyy-MM-dd hh:mm:ss"),
+                    messagehead: onlineUsers[socket.id].nickname + ' ' + chinaZone.Format("yyyy-MM-dd hh:mm:ss"),
                     messagecontent: message.text
                 };
                 msg.messagelist.push(data);
