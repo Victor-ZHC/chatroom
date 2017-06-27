@@ -126,6 +126,8 @@ img {
 
 #error-alert { display: none; }
 
+#success-alert { display: none; }
+
 /***** Media queries *****/
 
 @media (min-width: 992px) and (max-width: 1199px) {}

@@ -72,6 +72,8 @@
                             $('#error-alert-message').text(error_msg);
                             $('#error-alert').css('display', 'block');
                         } else {
+                            $('#error-alert').css('display', 'none');
+                            $('#success-alert').css('display', 'block');
                             window.location.href = "/main";
                         }
                     }
@@ -87,6 +89,9 @@
         <div class="container">
             <div id="error-alert" class="alert alert-warning">
                 <strong>出现了一点小问题！</strong><span id="error-alert-message"></span>
+            </div>
+            <div id="success-alert" class="alert alert-success">
+                <strong>登录成功！</strong></span>
             </div>
             <div class="row">
                 <div class="col-sm-8 col-sm-offset-2 text">
