@@ -106,13 +106,17 @@
         }
 
         function appendMessage(messageObj) {
+            var room;
             if (messageObj instanceof Array) {
+                room = currentRoom;
                 for (var i = 0; i < messageObj.length; i++) {
                     $('#message-' + currentRoom).append('<p class="message-head">' + messageObj[i].messagehead + '</p><p class="message-content">' + messageObj[i].messagecontent + '</p>');
                 }
             } else {
+                room = messageObj.room;
                 $('#message-' + messageObj.room).append('<p class="message-head">' + messageObj.messagehead + '</p><p class="message-content">' + messageObj.messagecontent + '</p>');
             }
+            $('#message-' + room).scrollTop($('#message-' + room)[0].scrollHeight);
         }
 
         function updateUserList() {
